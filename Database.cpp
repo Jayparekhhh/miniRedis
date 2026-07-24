@@ -5,8 +5,8 @@
 #include <iostream>
 
 bool Database::set(
-    const std::string& key,
-    const std::string& value)
+    std::string& key,
+    std::string& value)
 {
     data_[key].value = value;
 
@@ -14,7 +14,7 @@ bool Database::set(
 }
 
 std::string Database::get(
-    const std::string& key) 
+     std::string& key) 
 {
     auto it = data_.find(key);
 
@@ -33,23 +33,34 @@ std::string Database::get(
     return it->second.value;
 }
 
-bool Database::del(const std::string& key)
+bool Database::del( std::string& key)
 {
     return data_.erase(key) > 0;
 }
 
-bool Database::exists(const std::string& key) const
+bool Database::exists( std::string& key)
 {
-    return data_.find(key) != data_.end();
-}
+    auto itr = data_.find(key);
 
-std::vector<std::string> Database::keys() const
+    if (itr == data_.end())
+        return false;
+
+    if (itr->second.hasExpiry &&
+        std::chrono::steady_clock::now() >= itr->second.expiryTime)
+    {
+        data_.erase(itr);
+        return false;
+    }
+
+    return true;
+}
+std::vector<std::string> Database::keys() 
 {
     std::vector<std::string> result;
 
     result.reserve(data_.size());
 
-    for (const auto& [key, value] : data_)
+    for ( auto& [key, value] : data_)
     {
         result.push_back(key);
     }
@@ -63,7 +74,7 @@ void Database::clear()
 }
 
 bool Database::expire(
-    const std::string& key,
+     std::string& key,
     int seconds)
 {
     auto it = data_.find(key);
@@ -82,7 +93,7 @@ bool Database::expire(
     return true;
 }
 
-bool Database::isExpired(const Entry& entry) const
+bool Database::isExpired( Entry& entry) 
 {
     if (!entry.hasExpiry)
     {
@@ -92,7 +103,7 @@ bool Database::isExpired(const Entry& entry) const
     return std::chrono::steady_clock::now() >= entry.expiryTime;
 }
 
-long long Database::ttl(const std::string& key)
+long long Database::ttl( std::string& key)
 {
     auto it = data_.find(key);
 
@@ -139,7 +150,7 @@ void Database::removeExpiredKeys()
     }
 }
 
-const std::unordered_map<std::string, Entry>& Database::data() const
+std::unordered_map<std::string, Entry>& Database::data() 
 {
     return data_;
 }
@@ -197,8 +208,8 @@ void TTLManager::cleanupLoop()
 }
 
 bool Serializer::save(
-    const Database& database,
-    const std::string& filename)
+     Database& database,
+     std::string& filename)
 {
     std::ofstream out(
         filename,
@@ -214,16 +225,16 @@ bool Serializer::save(
         database.data().size();
 
     out.write(
-        reinterpret_cast<const char*>(&count),
+        reinterpret_cast< char*>(&count),
         sizeof(count)
     );
 
-    for (const auto& [key, entry] : database.data())
+    for ( auto& [key, entry] : database.data())
     {
         std::size_t keyLength = key.size();
 
         out.write(
-            reinterpret_cast<const char*>(&keyLength),
+            reinterpret_cast< char*>(&keyLength),
             sizeof(keyLength)
         );
 
@@ -236,7 +247,7 @@ bool Serializer::save(
             entry.value.size();
 
         out.write(
-            reinterpret_cast<const char*>(&valueLength),
+            reinterpret_cast< char*>(&valueLength),
             sizeof(valueLength)
         );
 
@@ -250,7 +261,7 @@ bool Serializer::save(
 
 bool Serializer::load(
     Database& database,
-    const std::string& filename)
+     std::string& filename)
 {
     std::ifstream in(
         filename,
