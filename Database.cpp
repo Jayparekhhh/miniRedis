@@ -4,18 +4,16 @@
 #include <fstream>
 #include <iostream>
 
-bool Database::set(
-    std::string& key,
-    std::string& value)
+bool Database::set(std::string& key, std::string& value)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     data_[key].value = value;
-
     return true;
 }
 
-std::string Database::get(
-     std::string& key) 
+std::string Database::get(std::string& key) 
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     auto it = data_.find(key);
 
     if (it == data_.end())
@@ -26,20 +24,21 @@ std::string Database::get(
     if (isExpired(it->second))
     {
         data_.erase(it);
-
         return "(nil)";
     }
 
     return it->second.value;
 }
 
-bool Database::del( std::string& key)
+bool Database::del(std::string& key)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     return data_.erase(key) > 0;
 }
 
-bool Database::exists( std::string& key)
+bool Database::exists(std::string& key)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     auto itr = data_.find(key);
 
     if (itr == data_.end())
@@ -54,13 +53,15 @@ bool Database::exists( std::string& key)
 
     return true;
 }
+
 std::vector<std::string> Database::keys() 
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     std::vector<std::string> result;
 
     result.reserve(data_.size());
 
-    for ( auto& [key, value] : data_)
+    for (auto& [key, value] : data_)
     {
         result.push_back(key);
     }
@@ -70,13 +71,13 @@ std::vector<std::string> Database::keys()
 
 void Database::clear()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     data_.clear();
 }
 
-bool Database::expire(
-     std::string& key,
-    int seconds)
+bool Database::expire(std::string& key, int seconds)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     auto it = data_.find(key);
 
     if (it == data_.end())
@@ -93,8 +94,10 @@ bool Database::expire(
     return true;
 }
 
-bool Database::isExpired( Entry& entry) 
+bool Database::isExpired(Entry& entry) 
 {
+    // No lock needed here: this is an internal helper function
+    // called by get/ttl/removeExpiredKeys which already hold the lock.
     if (!entry.hasExpiry)
     {
         return false;
@@ -103,8 +106,9 @@ bool Database::isExpired( Entry& entry)
     return std::chrono::steady_clock::now() >= entry.expiryTime;
 }
 
-long long Database::ttl( std::string& key)
+long long Database::ttl(std::string& key)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     auto it = data_.find(key);
 
     if (it == data_.end())
@@ -134,7 +138,6 @@ long long Database::ttl( std::string& key)
 void Database::removeExpiredKeys()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-
     auto it = data_.begin();
 
     while (it != data_.end())
@@ -152,6 +155,7 @@ void Database::removeExpiredKeys()
 
 std::unordered_map<std::string, Entry>& Database::data() 
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     return data_;
 }
 
@@ -207,9 +211,7 @@ void TTLManager::cleanupLoop()
     }
 }
 
-bool Serializer::save(
-     Database& database,
-     std::string& filename)
+bool Serializer::save(Database& database, std::string& filename)
 {
     std::ofstream out(
         filename,
@@ -221,20 +223,19 @@ bool Serializer::save(
         return false;
     }
 
-    std::size_t count =
-        database.data().size();
+    std::size_t count = database.data().size();
 
     out.write(
-        reinterpret_cast< char*>(&count),
+        reinterpret_cast<char*>(&count),
         sizeof(count)
     );
 
-    for ( auto& [key, entry] : database.data())
+    for (auto& [key, entry] : database.data())
     {
         std::size_t keyLength = key.size();
 
         out.write(
-            reinterpret_cast< char*>(&keyLength),
+            reinterpret_cast<char*>(&keyLength),
             sizeof(keyLength)
         );
 
@@ -243,11 +244,10 @@ bool Serializer::save(
             keyLength
         );
 
-        std::size_t valueLength =
-            entry.value.size();
+        std::size_t valueLength = entry.value.size();
 
         out.write(
-            reinterpret_cast< char*>(&valueLength),
+            reinterpret_cast<char*>(&valueLength),
             sizeof(valueLength)
         );
 
@@ -259,9 +259,7 @@ bool Serializer::save(
     return true;
 }
 
-bool Serializer::load(
-    Database& database,
-     std::string& filename)
+bool Serializer::load(Database& database, std::string& filename)
 {
     std::ifstream in(
         filename,
