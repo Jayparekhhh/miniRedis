@@ -48,7 +48,7 @@ void Socket::create()
     }
 }
 
-int Socket::getFd() const
+int Socket::getFd() 
 {
     return fd_;
 }
@@ -125,7 +125,7 @@ std::string Socket::receive(int clientFd)
 
 void Socket::sendMessage(
     int clientFd,
-    const std::string& message)
+     std::string& message)
 {
     ssize_t bytesSent =
         send(clientFd,
@@ -143,7 +143,7 @@ void Socket::sendMessage(
 }
 
 Command CommandParser::parse(
-    const std::string& input) const
+     std::string& input) 
 {
     Command command;
 
@@ -162,7 +162,7 @@ Command CommandParser::parse(
 }
 
 Command RespParser::parse(
-    const std::string& input) const
+     std::string& input) 
 {
     Command command;
 
@@ -212,7 +212,7 @@ CommandExecutor::CommandExecutor(Database& database)
 {
 }
 
-std::string CommandExecutor::execute(const Command& command)
+std::string CommandExecutor::execute( Command& command)
 {
     if (command.name == "SET")
     {
@@ -278,7 +278,7 @@ std::string CommandExecutor::execute(const Command& command)
 
         std::string response;
 
-        for (const auto& key : keys)
+        for ( auto& key : keys)
         {
             response += key;
             response += '\n';
@@ -477,7 +477,7 @@ void Server::start()
                 }
             ).detach();
         }
-        catch (const std::exception& e)
+        catch ( std::exception& e)
         {
             std::cerr
                 << "Accept error: "
