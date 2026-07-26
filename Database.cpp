@@ -96,8 +96,6 @@ bool Database::expire(std::string& key, int seconds)
 
 bool Database::isExpired(Entry& entry) 
 {
-    // No lock needed here: this is an internal helper function
-    // called by get/ttl/removeExpiredKeys which already hold the lock.
     if (!entry.hasExpiry)
     {
         return false;
