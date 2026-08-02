@@ -2,7 +2,6 @@
 
 #include <sys/socket.h>
 #include <unistd.h>
-#include <cerrno>
 #include <iostream>
 #include <cstring>
 #include <netinet/in.h>
@@ -28,9 +27,7 @@ void Socket::create()
     if (fd_ == -1)
     {
         throw std::runtime_error(
-            std::string("Failed to create socket: ") +
-            std::strerror(errno)
-        );
+            std::string("Failed to create socket: "));
     }
     int opt = 1;
 
@@ -42,8 +39,7 @@ void Socket::create()
             sizeof(opt)) == -1)
     {
         throw std::runtime_error(
-            std::string("setsockopt failed: ") +
-            std::strerror(errno)
+            std::string("setsockopt failed: ")
         );
     }
 }
@@ -67,9 +63,7 @@ void Socket::bind(int port)
             sizeof(serverAddress)) == -1)
     {
         throw std::runtime_error(
-            std::string("Bind failed: ") +
-            std::strerror(errno)
-        );
+            std::string("Bind failed: ")        );
     }
 }
 
@@ -78,9 +72,7 @@ void Socket::listen(int backlog)
     if (::listen(fd_, backlog) == -1)
     {
         throw std::runtime_error(
-            std::string("Listen failed: ") +
-            std::strerror(errno)
-        );
+            std::string("Listen failed: ")         );
     }
 }
 
@@ -91,9 +83,7 @@ int Socket::accept()
     if (clientFd == -1)
     {
         throw std::runtime_error(
-            std::string("Accept failed: ") +
-            std::strerror(errno)
-        );
+            std::string("Accept failed: ")         );
     }
 
     return clientFd;
@@ -112,9 +102,7 @@ std::string Socket::receive(int clientFd)
     if (bytesReceived == -1)
     {
         throw std::runtime_error(
-            std::string("Receive failed: ") +
-            std::strerror(errno)
-        );
+            std::string("Receive failed: ")         );
     }
 
     buffer[bytesReceived] = '\0';
@@ -136,9 +124,7 @@ void Socket::sendMessage(
     if (bytesSent == -1)
     {
         throw std::runtime_error(
-            std::string("Send failed: ") +
-            std::strerror(errno)
-        );
+            std::string("Send failed: ")         );
     }
 }
 
