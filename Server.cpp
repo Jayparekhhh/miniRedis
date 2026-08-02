@@ -336,7 +336,7 @@ std::string CommandExecutor::execute( Command& command)
         bool success =
             serializer_.save(
                 database_,
-                "cachecore.rdb"
+                "f1.rdb"
             );
 
         return success
@@ -353,7 +353,7 @@ std::string CommandExecutor::execute( Command& command)
         bool success =
             serializer_.load(
                 database_,
-                "cachecore.rdb"
+                "f1.rdb"
             );
 
         return success
@@ -433,7 +433,7 @@ void Server::start()
     socket_.create();
     serializer_.load(
         database_,
-        "cachecore.rdb"
+        "f1.rdb"
     );
     std::cout
         << "Socket created. FD = "
