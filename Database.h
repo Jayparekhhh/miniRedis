@@ -5,8 +5,7 @@
 #include <unordered_map>
 #include <mutex>
 #include <chrono>
-#include <atomic>
-#include <thread>
+=#include <thread>
 #include <stdexcept>
 
 
@@ -48,7 +47,7 @@ class TTLManager
 private:
     Database& database_;
     std::thread worker_;
-    std::atomic<bool> running_;
+    bool running_;
 
 public:
        TTLManager(Database& database);
