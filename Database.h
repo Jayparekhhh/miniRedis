@@ -30,17 +30,17 @@ private:
     mutable std::mutex mutex_;
 
 public:
-    bool set(const std::string& key, const std::string& value);
-    std::string get(const std::string& key);
-    bool del(const std::string& key);
-    bool exists(const std::string& key) const;
-    std::vector<std::string> keys() const;
+    bool set(  std::string& key,   std::string& value);
+    std::string get(  std::string& key);
+    bool del(  std::string& key);
+    bool exists(  std::string& key)  ;
+    std::vector<std::string> keys()  ;
     void clear();
-    bool expire(const std::string& key, int seconds);
-    bool isExpired(const Entry& entry) const;
-    long long ttl(const std::string& key);
+    bool expire(  std::string& key, int seconds);
+    bool isExpired(  Entry& entry)  ;
+    long long ttl(  std::string& key);
     void removeExpiredKeys();
-    const std::unordered_map<std::string, Entry>& data() const;
+      std::unordered_map<std::string, Entry>& data()  ;
 };
 
 class TTLManager
@@ -51,7 +51,7 @@ private:
     std::atomic<bool> running_;
 
 public:
-    explicit TTLManager(Database& database);
+       TTLManager(Database& database);
     ~TTLManager();
     void start();
     void stop();
@@ -63,20 +63,20 @@ private:
 class Serializer
 {
 public:
-    bool save(const Database& database, const std::string& filename);
-    bool load(Database& database, const std::string& filename);
+    bool save(  Database& database,   std::string& filename);
+    bool load(Database& database,   std::string& filename);
 };
 
 class CommandParser
 {
 public:
-    Command parse(const std::string& input) const;
+    Command parse(  std::string& input)  ;
 };
 
 class RespParser
 {
 public:
-    Command parse(const std::string& input) const;
+    Command parse(  std::string& input)  ;
 };
 
 class CommandExecutor
@@ -86,8 +86,8 @@ private:
     Serializer serializer_;
 
 public:
-    explicit CommandExecutor(Database& database);
-    std::string execute(const Command& command);
+       CommandExecutor(Database& database);
+    std::string execute(  Command& command);
 };
 
 class Socket
@@ -99,12 +99,12 @@ public:
     Socket();
     ~Socket();
     void create();
-    int getFd() const;
+    int getFd()  ;
     void bind(int port);
     void listen(int backlog = SOMAXCONN);
     int accept();
     std::string receive(int clientFd);
-    void sendMessage(int clientFd, const std::string& message);
+    void sendMessage(int clientFd,   std::string& message);
 };
 
 class ClientHandler
@@ -131,6 +131,6 @@ private:
     Serializer serializer_;
 
 public:
-    explicit Server(int port);
+       Server(int port);
     void start();
 };
